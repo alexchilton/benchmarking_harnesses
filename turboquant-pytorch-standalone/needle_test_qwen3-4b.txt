@@ -1,0 +1,24 @@
+  Context: ~2048 tokens
+FOUND | "
+  [V3 K6/V4 rw=128] 2096 tokens, needle@50%... FOUND | "
+  [V3 K8/V4 rw=128] 2096 tokens, needle@50%... FOUND | "
+  [V3 K4/V4 rw=128] 2096 tokens, needle@50%... FOUND | "
+  [V3 K4/V2 rw=0] 2096 tokens, needle@50%... FOUND | "
+  [V3 K4/V3 rw=0] 2096 tokens, needle@50%... FOUND | "
+  [V3 K3/V2 rw=0] 2096 tokens, needle@50%... MISS | "AURORA-777
+  Context: ~4096 tokens
+  [FP16 (baseline)] 4121 tokens, needle@50%... FOUND | "
+  [V3 K6/V4 rw=128] 4121 tokens, needle@50%... FOUND | "
+  [V3 K8/V4 rw=128] 4121 tokens, needle@50%... FOUND | "
+  [V3 K4/V4 rw=128] 4121 tokens, needle@50%... FOUND | "
+  [V3 K4/V2 rw=0] 4121 tokens, needle@50%... FOUND | "
+  [V3 K4/V3 rw=0] 4121 tokens, needle@50%... FOUND | "
+  [V3 K3/V2 rw=0] 4121 tokens, needle@50%... MISS | "
+  Context: ~8192 tokens
+  [FP16 (baseline)] 8252 tokens, needle@50%... FOUND | "
+  [V3 K6/V4 rw=128] 8252 tokens, needle@50%... FOUND | "
+  [V3 K8/V4 rw=128] 8252 tokens, needle@50%... FOUND | "
+  [V3 K4/V4 rw=128] 8252 tokens, needle@50%... FOUND | "
+  [V3 K4/V2 rw=0] 8252 tokens, needle@50%... FOUND | "</think>
+  [V3 K4/V3 rw=0] 8252 tokens, needle@50%... FOUND | "</think>
+  [V3 K3/V2 rw=0] 8252 tokens, needle@50%...

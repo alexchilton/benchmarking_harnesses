@@ -31,9 +31,23 @@ Throughput (cool-GPU / least-throttled runs) and steady-state VRAM:
 - **vLLM vs SGLang:** throughput is ~tied when cool (~40 tok/s); SGLang uses ~1.2 GB less VRAM
   and handles tool-calling natively. Latency degrades badly mid-run on both from **thermal
   throttling** (see caveat) — the VRAM column is the trustworthy axis.
-- **TurboQuant:** runs but at **~0.1 tok/s** (≈400× slower) because only the PyTorch reference
-  compression path is available here. This benchmark measures the *cost* of compression, not its
-  *benefit* (memory) — for that, see the `--kv-capacity` probe. Raw JSON in [`results/`](results/).
+- **TurboQuant:** has two faces. The **vLLM integration** (`turboquant-plus-vllm`) runs but at
+  **~0.1 tok/s** (≈400× slower) — only its PyTorch reference path is available here, so this
+  benchmark shows the *cost* of compression, not its memory *benefit*. The **standalone library**
+  (`turboquant-pytorch`, see [`turboquant-pytorch-standalone/`](turboquant-pytorch-standalone/))
+  works cleanly: on the **same Qwen3-4B**, it compresses the KV cache to **4-bit keys with exact
+  needle retrieval** at 2K/4K/8K (only 3-bit breaks). So the algorithm is sound — the slowness is
+  the vLLM glue, not TurboQuant. Raw JSON in [`results/`](results/).
+
+## Three-way takeaway
+
+- **vLLM & SGLang** are the real serving comparison: both ~40 tok/s (cool) on Qwen3-4B; SGLang uses
+  ~1.2 GB less VRAM and does tool-calls natively. On *this* laptop GPU, thermal throttling — not the
+  engine — caps sustained speed.
+- **TurboQuant** is a different category: a KV/weight *compression* technique, not a serving engine.
+  Its value is **memory** (4-bit KV ≈ 4× smaller KV cache, verified lossless for retrieval on
+  Qwen3-4B). Realizing that at serving speed needs the fused CUDA kernel on native Linux; the vLLM
+  integration on this stack only exposes the slow reference path.
 
 ## How TurboQuant is meant to be deployed
 

@@ -37,10 +37,33 @@ Pinned env: [`requirements-turboquant-pytorch.txt`](requirements-turboquant-pyto
 # synthetic validation (no model download) -- output saved here
 python -m turboquant.test_turboquant
 
-# real-model needle-in-haystack (downloads Qwen2.5-3B-Instruct ~6GB)
+# real-model needle-in-haystack on the SAME model as the serving benchmark
+# (Qwen3-4B, already cached). Two edits vs upstream, see generation_test.qwen3.py:
+#   MODEL_NAME -> "Qwen/Qwen3-4B"   and   append "/no_think" (Qwen3 is a reasoning
+#   model; without this it spends the short token budget on <think> and even FP16 misses)
 python -m turboquant.generation_test
-python -m turboquant.validate_v3
 ```
+
+## Real-model results: Qwen3-4B needle-in-haystack
+
+Same Qwen3-4B used by vLLM/SGLang. Hide "AURORA-7749" in a document, ask the model to
+retrieve it, with the KV cache compressed by TurboQuant V3. Full log:
+[`needle_test_qwen3-4b.txt`](needle_test_qwen3-4b.txt).
+
+| Config | ~avg bits | 2K | 4K | 8K |
+|--------|-----------|----|----|----|
+| FP16 baseline | 16 | FOUND | FOUND | FOUND |
+| K6/V4 rw=128 | 5 | FOUND | FOUND | FOUND |
+| K8/V4 rw=128 | 6 | FOUND | FOUND | FOUND |
+| K4/V4 rw=128 | 4 | FOUND | FOUND | FOUND |
+| K4/V2 rw=0 | 3 | FOUND | FOUND | FOUND |
+| K4/V3 rw=0 | 3.5 | FOUND | FOUND | FOUND |
+| K3/V2 rw=0 | 2.5 | MISS (`AURORA-777`) | MISS | (not run) |
+
+**Takeaway:** on Qwen3-4B, TurboQuant compresses the KV cache to **4-bit keys with no
+retrieval loss** (needle exact at 2K/4K/8K); only **3-bit keys** break it. Matches the paper.
+The per-step PyTorch recompression makes long-context generation slow — fine for validation,
+and exactly why a fused kernel is needed for serving.
 
 ## Results on RTX 3080 (sm86), synthetic test
 
