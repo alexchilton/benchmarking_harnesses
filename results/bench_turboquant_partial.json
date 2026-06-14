@@ -1,0 +1,11 @@
+{
+  "label": "turboquant",
+  "status": "serves, but impractically slow on this stack",
+  "note": "3-bit weights + 4-bit KV cache. Only the PyTorch reference compression path runs (per-token Python compression on every decode step); the fused CUDA kernel path is blocked here by a 'bit_width must be 1-4' constraint (default boundary layers use 8-bit K). The full benchmark.py suite was not run because generation is ~0.1 tok/s (multi_turn alone would take ~2.5 h).",
+  "results": {
+    "_steady_state_vram_mib": 14507,
+    "generation_throughput_tok_per_sec": 0.1,
+    "_source": "vLLM engine 'Avg generation throughput' logs, Running: 1 req",
+    "comparison_tok_per_sec": {"vllm_cool": 42.2, "sglang": 40.0, "turboquant_pytorch_path": 0.1}
+  }
+}

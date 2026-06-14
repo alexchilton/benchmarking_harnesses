@@ -7,5 +7,5 @@ echo "Starting vLLM+TurboQuant (weight quant + KV cache compression) on port $PO
     --model $MODEL \
     --port $PORT \
     --host 0.0.0.0 \
-    --served-model-name default --enable-auto-tool-choice --tool-call-parser hermes --enforce-eager --gpu-memory-utilization 0.85 \
+    --served-model-name default --enable-auto-tool-choice --tool-call-parser hermes --enforce-eager --max-num-seqs 1 --max-num-batched-tokens 512 --gpu-memory-utilization 0.85 \
     --max-model-len 8192

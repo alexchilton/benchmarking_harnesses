@@ -14,7 +14,42 @@ OpenAI-compatible API on port `8010`; `benchmark.py` drives whichever one is up.
 |---|---|---|
 | **vLLM 0.23.0** | ✅ | `/usr/local/cuda` → 12.6, `ninja`+`nvcc` on system PATH, `--served-model-name default` |
 | **SGLang 0.5.2** | ✅ | Rolled back from 0.5.13: 0.5.13's `sglang-kernel 0.4.3` ships sm90/sm100 only (no Ampere). 0.5.2 + `sgl-kernel 0.3.9.post2` (has sm_80, runs on sm86) + torch 2.8.0 |
-| **TurboQuant (turboquant-plus-vllm 0.13.7)** | ✅ (eager) | torch 2.11 + torchvision 0.26 ABI match, launcher fixes, **WSL UVA-gate override**, KV-layout patch (`unbind(0)`→`unbind(1)`), `--enforce-eager` |
+| **TurboQuant (turboquant-plus-vllm 0.13.7)** | ⚠️ serves, but ~0.1 tok/s | torch 2.11 + torchvision 0.26 ABI match, launcher fixes, **WSL UVA-gate override**, KV-layout patch (`unbind(0)`→`unbind(1)`), `--enforce-eager`, tiny warmup batch. Only the slow **PyTorch** compression path runs; CUDA fast-path blocked (see below). |
+
+## Results (Qwen3-4B, RTX 3080 sm86, port 8010)
+
+Throughput (cool-GPU / least-throttled runs) and steady-state VRAM:
+
+| Metric | vLLM 0.23 | SGLang 0.5.2 | TurboQuant |
+|---|---|---|---|
+| Steady-state VRAM | 15,560 MiB | 14,397 MiB | 14,507 MiB |
+| basic_long (300 tok) tok/s | 42.2 | 40.0 | ~0.1 |
+| rag_style (100 tok) tok/s | 41.4 | 38.9 | ~0.1 |
+| tool_call | needs `--tool-call-parser`; ~36 | native, 36.5 | (not run) |
+| basic_short median latency | 0.25 s | 0.27 s | very slow |
+
+- **vLLM vs SGLang:** throughput is ~tied when cool (~40 tok/s); SGLang uses ~1.2 GB less VRAM
+  and handles tool-calling natively. Latency degrades badly mid-run on both from **thermal
+  throttling** (see caveat) — the VRAM column is the trustworthy axis.
+- **TurboQuant:** runs but at **~0.1 tok/s** (≈400× slower) because only the PyTorch reference
+  compression path is available here. This benchmark measures the *cost* of compression, not its
+  *benefit* (memory) — for that, see the `--kv-capacity` probe. Raw JSON in [`results/`](results/).
+
+## How TurboQuant is meant to be deployed
+
+Getting it to *run* here proves the integration, but this is **not** its intended deployment:
+
+1. **Native Linux, not WSL** — so UVA is genuinely available (no gate override needed).
+2. **Its fused CUDA compression kernel, not the PyTorch reference path** — the Python per-token
+   path runs the compressor on every decode step (~0.1 tok/s). The CUDA kernel does it on-device
+   with negligible overhead. Engage it with a kernel build matching the configured bit-widths
+   (`norm_correction=False` + ≤4-bit everywhere; default 8-bit boundary layers hit `bit_width must be 1-4`).
+3. **The vLLM version TurboQuant was validated against** — 0.13.7 assumes the old KV-cache layout,
+   so on vLLM 0.23 it needs the `unbind` patch here.
+
+TurboQuant is a **memory** play (3-bit weights + 4-bit KV → bigger models / longer context / more
+concurrency in fixed VRAM). On the fused CUDA kernel + native Linux, throughput is near-native and
+the win shows up as capacity, not speed.
 
 ## Environment
 
