@@ -1,0 +1,37 @@
+{
+  "label": "vllm",
+  "results": {
+    "_steady_state_vram_mib": 15560,
+    "basic_short": {
+      "avg_latency": 0.28879550940000626,
+      "median_latency": 0.24897187900000972,
+      "avg_tok_per_sec": 36.661650266221685,
+      "peak_vram_mib": 15562
+    },
+    "basic_long": {
+      "avg_latency": 7.867769542999895,
+      "median_latency": 7.626807797999845,
+      "avg_tok_per_sec": 38.39926187287317,
+      "peak_vram_mib": 15562
+    },
+    "rag_style": {
+      "avg_latency": 8.435189129333367,
+      "median_latency": 9.461548929999935,
+      "avg_tok_per_sec": 13.341991408889923,
+      "peak_vram_mib": 15562
+    },
+    "tool_call": {
+      "avg_latency": 12.23878410433334,
+      "median_latency": 11.69761523399984,
+      "avg_tok_per_sec": 8.217846016632498,
+      "peak_vram_mib": 15562
+    },
+    "multi_turn": {
+      "avg_latency": 55.252108110666846,
+      "median_latency": 57.562987580000026,
+      "avg_tok_per_sec": 5.504583366308304,
+      "peak_vram_mib": 15562
+    },
+    "_overall_peak_vram_mib": 15562
+  }
+}

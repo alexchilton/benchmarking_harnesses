@@ -1,0 +1,25 @@
+{
+  "label": "vllm",
+  "results": {
+    "basic_short": {
+      "avg_latency": 0.2916243386000133,
+      "median_latency": 0.2478496680000717,
+      "avg_tok_per_sec": 36.67378295915943
+    },
+    "basic_long": {
+      "avg_latency": 7.10691174433335,
+      "median_latency": 7.110378245999982,
+      "avg_tok_per_sec": 42.2142257164963
+    },
+    "rag_style": {
+      "avg_latency": 2.4143006256666317,
+      "median_latency": 2.410024162999889,
+      "avg_tok_per_sec": 41.42014644896569
+    },
+    "multi_turn": {
+      "avg_latency": 7.476388934333424,
+      "median_latency": 7.469637871000032,
+      "avg_tok_per_sec": 40.16400516568582
+    }
+  }
+}

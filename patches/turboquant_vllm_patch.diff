@@ -1,0 +1,37 @@
+# TurboQuant source modifications for vLLM 0.23 on RTX 3080 (sm86) under WSL2
+#
+# Applies to: turboquant-plus-vllm==0.13.7, file:
+#   <turboquant_env>/lib/python3.12/site-packages/turboquant_vllm/vllm_patch.py
+#
+# Reason: turboquant-plus-vllm 0.13.7 assumes the OLD vLLM KV-cache tensor layout
+#   (2, num_blocks, block_size, num_kv_heads, head_size)   -> unbind(0) yields (K, V)
+# but vLLM 0.23 FlashAttention uses
+#   (num_blocks, 2, block_size, num_kv_heads, head_size)   -> the K/V axis is dim 1
+# (confirmed in vllm/v1/attention/backends/flash_attn.py: get_kv_cache_shape returns
+#  (num_blocks, 2, block_size, num_kv_heads, head_size)).
+# So unbind(0) returns num_blocks tensors -> "ValueError: too many values to unpack".
+# Fix: unbind(1). The downstream indexing key_cache[block_idx, offset, head_idx]
+# stays correct because the per-(K|V) tensor is then (num_blocks, block_size,
+# num_kv_heads, head_size). Only the FlashAttention (GQA/MHA) path is patched; the
+# MLA path (DeepSeek/GLM) is left as-is since Qwen3 does not use it.
+
+--- a/turboquant_vllm/vllm_patch.py
++++ b/turboquant_vllm/vllm_patch.py
+@@ -166,7 +166,9 @@ def _make_patched_cache_update(original_fn):
+         compressor = _layer_compressor[layer_id]
+
+-        key_cache, _ = kv_cache.unbind(0)
++        # vLLM 0.23 KV-cache layout is (num_blocks, 2, block_size, num_kv_heads,
++        # head_size); the K/V axis moved from dim 0 to dim 1, so unbind(1).
++        key_cache, _ = kv_cache.unbind(1)
+         block_size = key_cache.shape[1]
+
+@@ -205,7 +207,8 @@ def _make_patched_forward(original_fn):
+         compressor = _layer_compressor.get(id(layer))
+         if compressor is None:
+             return original_fn(self, layer, query, key, value, kv_cache, attn_metadata, output, **kwargs)
+-        key_cache, value_cache = kv_cache.unbind(0)
++        # vLLM 0.23 layout (num_blocks, 2, block_size, ...): K/V axis is dim 1.
++        key_cache, value_cache = kv_cache.unbind(1)
+
+         for (block_idx, offset, head_idx), compressed in store.items():
