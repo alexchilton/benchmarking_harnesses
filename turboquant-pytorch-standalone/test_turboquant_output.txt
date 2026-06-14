@@ -1,0 +1,82 @@
+
+TurboQuant Implementation Verification
+Based on: 'TurboQuant: Online Vector Quantization' (ICLR 2026)
+
+============================================================
+TEST 1: Lloyd-Max Codebook Properties
+============================================================
+  d=  64, bits=1: 2 levels, distortion/coord=0.005678, centroids range=[-0.0997, 0.0997]
+  d=  64, bits=2: 4 levels, distortion/coord=0.001836, centroids range=[-0.1888, 0.1888]
+  d=  64, bits=3: 8 levels, distortion/coord=0.000540, centroids range=[-0.2690, 0.2690]
+  d=  64, bits=4: 16 levels, distortion/coord=0.000148, centroids range=[-0.3416, 0.3416]
+  d= 128, bits=1: 2 levels, distortion/coord=0.002839, centroids range=[-0.0705, 0.0705]
+  d= 128, bits=2: 4 levels, distortion/coord=0.000918, centroids range=[-0.1335, 0.1335]
+  d= 128, bits=3: 8 levels, distortion/coord=0.000270, centroids range=[-0.1902, 0.1902]
+  d= 128, bits=4: 16 levels, distortion/coord=0.000074, centroids range=[-0.2416, 0.2416]
+  d= 256, bits=1: 2 levels, distortion/coord=0.001419, centroids range=[-0.0499, 0.0499]
+  d= 256, bits=2: 4 levels, distortion/coord=0.000459, centroids range=[-0.0944, 0.0944]
+  d= 256, bits=3: 8 levels, distortion/coord=0.000135, centroids range=[-0.1345, 0.1345]
+  d= 256, bits=4: 16 levels, distortion/coord=0.000037, centroids range=[-0.1708, 0.1708]
+
+  Symmetry check (d=128, b=3): sum of centroids = 0.000000 (should be ~0)
+  PASSED
+
+============================================================
+TEST 2: MSE Quantizer Distortion
+============================================================
+  bits=1: MSE=0.361611, theory_bound=0.680175, ratio=0.532 [OK]
+  bits=2: MSE=0.116239, theory_bound=0.170044, ratio=0.684 [OK]
+  bits=3: MSE=0.034059, theory_bound=0.042511, ratio=0.801 [OK]
+  bits=4: MSE=0.009205, theory_bound=0.010628, ratio=0.866 [OK]
+
+============================================================
+TEST 3: Inner Product Unbiasedness (QJL Correction)
+============================================================
+  bits=2: bias=-0.000404, RMSE=0.066987, corr=0.7989, theory_D=0.008347
+  bits=3: bias=-0.001057, RMSE=0.036657, corr=0.9255, theory_D=0.002087
+  bits=4: bias=+0.000114, RMSE=0.019844, corr=0.9750, theory_D=0.000522
+
+============================================================
+TEST 4: MSE-Only Inner Product Bias (motivation for QJL)
+============================================================
+  bits=1: bias=-0.000560 (MSE-only is biased, QJL fixes this)
+  bits=2: bias=-0.001015 (MSE-only is biased, QJL fixes this)
+  bits=3: bias=+0.000199 (MSE-only is biased, QJL fixes this)
+
+============================================================
+TEST 5: KV Cache Compression Ratios
+============================================================
+  bits=2: compression=7.76x (66.0 KB vs 512.0 KB fp16)
+           attention scores shape: torch.Size([1024]), range=[-48.482, 55.166]
+  bits=3: compression=5.22x (98.0 KB vs 512.0 KB fp16)
+           attention scores shape: torch.Size([1024]), range=[-48.643, 52.894]
+  bits=4: compression=3.94x (130.0 KB vs 512.0 KB fp16)
+           attention scores shape: torch.Size([1024]), range=[-47.681, 49.974]
+
+============================================================
+TEST 6: Needle-in-Haystack Retrieval
+============================================================
+  bits=2, seq=  512: top1=  170 (needle=  170) [EXACT]
+  bits=2, seq= 2048: top1=  682 (needle=  682) [EXACT]
+  bits=2, seq= 8192: top1= 2730 (needle= 2730) [EXACT]
+  bits=3, seq=  512: top1=  170 (needle=  170) [EXACT]
+  bits=3, seq= 2048: top1=  682 (needle=  682) [EXACT]
+  bits=3, seq= 8192: top1= 2730 (needle= 2730) [EXACT]
+  bits=4, seq=  512: top1=  170 (needle=  170) [EXACT]
+  bits=4, seq= 2048: top1=  682 (needle=  682) [EXACT]
+  bits=4, seq= 8192: top1= 2730 (needle= 2730) [EXACT]
+
+============================================================
+TEST 7: GPU Benchmark (if CUDA available)
+============================================================
+  GPU: NVIDIA GeForce RTX 3080 Laptop GPU
+  Config: d=128, bits=3, seq_len=8192, n_queries=64
+  Quantize 8192 keys: 16.79 ms
+  Inner product (64 queries x 8192 keys): 16.14 ms
+  Full-precision matmul: 0.03 ms
+  Memory: 2048.0 KB (fp16) vs 384.0 KB (TQ-3bit)
+  Compression: 5.3x
+
+============================================================
+ALL TESTS COMPLETE
+============================================================
